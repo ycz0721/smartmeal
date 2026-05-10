@@ -1,0 +1,123 @@
+smartmeal/
+├── 📄 配置文件
+│   ├── package.json              # 项目依赖和脚本
+│   ├── .env.example              # 环境变量模板
+│   ├── .gitignore                # Git 忽略规则
+│   ├── zbpack.json               # Zeabur 部署配置
+│   ├── tsconfig.json             # TypeScript 配置
+│   ├── tailwind.config.ts        # Tailwind CSS 配置
+│   ├── next.config.ts            # Next.js 配置
+│   └── postcss.config.js         # PostCSS 配置
+│
+├── 📚 文档
+│   ├── README.md                 # 完整项目文档
+│   ├── QUICKSTART.md             # 快速启动指南
+│   ├── PROJECT_SUMMARY.md        # 项目总结
+│   └── START_HERE.txt            # 启动指南
+│
+├── 🗄️ prisma/
+│   ├── schema.prisma             # 数据模型（5个表）
+│   └── seed.ts                   # 种子数据（20道食谱）
+│
+├── 📦 src/
+│   ├── 🔧 lib/
+│   │   ├── prisma.ts             # Prisma 客户端单例
+│   │   ├── ai.ts                 # DeepSeek API 封装
+│   │   ├── auth.ts               # NextAuth.js v5 配置
+│   │   ├── unit-normalizer.ts   # 食材单位归一化
+│   │   └── utils.ts              # 工具函数
+│   │
+│   ├── 📝 types/
+│   │   ├── index.ts              # TypeScript 类型定义
+│   │   └── next-auth.d.ts        # NextAuth 类型扩展
+│   │
+│   ├── 🏪 stores/
+│   │   └── userPrefs.ts          # Zustand 用户偏好状态
+│   │
+│   ├── 🎨 components/
+│   │   ├── ui/                   # shadcn/ui 组件（10个）
+│   │   │   ├── button.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── form.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── checkbox.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   └── skeleton.tsx
+│   │   │
+│   │   ├── TabBar.tsx            # 底部导航栏
+│   │   ├── RecipeCard.tsx        # 食谱卡片
+│   │   ├── MealPlanCard.tsx      # 膳食计划卡片
+│   │   ├── GroceryItem.tsx       # 购物清单项
+│   │   ├── EmptyState.tsx        # 空状态组件
+│   │   └── LoadingSkeleton.tsx   # 加载骨架屏
+│   │
+│   └── 📱 app/
+│       ├── layout.tsx            # 根布局
+│       ├── page.tsx              # 根页面（重定向）
+│       ├── globals.css           # 全局样式
+│       ├── manifest.ts           # PWA manifest
+│       │
+│       ├── 🔐 (auth)/            # 认证页面
+│       │   ├── login/page.tsx    # 登录页
+│       │   └── register/page.tsx # 注册页
+│       │
+│       ├── 🏠 (main)/            # 主应用页面
+│       │   ├── layout.tsx        # 主应用布局
+│       │   ├── plan/
+│       │   │   ├── page.tsx      # 膳食计划页
+│       │   │   └── history/page.tsx # 历史计划页
+│       │   ├── recipes/
+│       │   │   ├── page.tsx      # 食谱列表页
+│       │   │   ├── add/page.tsx  # 添加食谱页
+│       │   │   └── [id]/page.tsx # 食谱详情页
+│       │   ├── groceries/page.tsx # 购物清单页
+│       │   └── profile/page.tsx  # 个人中心页
+│       │
+│       └── 🔌 api/               # API 路由
+│           ├── auth/
+│           │   ├── [...nextauth]/route.ts # NextAuth 认证
+│           │   └── register/route.ts      # 用户注册
+│           ├── plan/
+│           │   ├── generate/route.ts      # 生成膳食计划
+│           │   ├── current/route.ts       # 获取当前计划
+│           │   └── history/route.ts       # 历史计划
+│           ├── recipes/
+│           │   ├── route.ts               # 食谱列表
+│           │   ├── quick-add/route.ts     # 快速添加
+│           │   ├── from-url/route.ts      # URL 解析
+│           │   ├── from-pantry/route.ts   # Pantry 生成
+│           │   └── [id]/
+│           │       ├── route.ts           # 食谱详情
+│           │       └── favorite/route.ts  # 收藏食谱
+│           └── groceries/
+│               ├── aggregate/route.ts     # 购物清单聚合
+│               └── [id]/toggle/route.ts   # 切换购物项状态
+│
+└── 🖼️ public/
+    ├── icon-192.png              # PWA 图标
+    └── icon-512.png              # PWA 图标
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 统计
+  总文件数：48 个核心文件
+  代码行数：约 3000+ 行
+  API 路由：11 个
+  页面组件：11 个
+  UI 组件：16 个
+  种子食谱：20 道
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ 核心特性
+  ✅ 手机号认证（格式验证 /^1[3-9]\d{9}$/）
+  ✅ DeepSeek AI（JSON Mode）
+  ✅ PostgreSQL + Prisma ORM
+  ✅ 移动端优先 UI（橙色主题 #F97316）
+  ✅ PWA 支持
+  ✅ Zeabur 部署友好
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

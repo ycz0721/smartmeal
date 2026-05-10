@@ -1,0 +1,75 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String         @id @default(cuid())
+  phone        String         @unique
+  password     String
+  name         String?
+  cuisines     String?
+  intolerances String?
+  dietary      String?
+  familySize   Int            @default(2)
+  createdAt    DateTime       @default(now())
+  recipes      Recipe[]
+  plans        MealPlan[]
+  pantry       PantryItem[]
+  shopping     ShoppingItem[]
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String
+  servings    Int      @default(4)
+  cookTime    Int
+  imageUrl    String?
+  tags        String
+  ingredients String
+  steps       String
+  source      String?
+  favorite    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MealPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  weekStart DateTime
+  isCurrent Boolean  @default(false)
+  meals         String
+  cookedRecipes String @default("[]")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PantryItem {
+  id     String @id @default(cuid())
+  userId String
+  name   String
+  amount Float
+  unit   String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name, unit])
+}
+
+model ShoppingItem {
+  id      String  @id @default(cuid())
+  userId  String
+  name    String
+  amount  Float
+  unit    String
+  checked Boolean @default(false)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name, unit])
+}

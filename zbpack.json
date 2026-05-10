@@ -1,0 +1,5 @@
+{
+  "build_command": "prisma generate && prisma migrate deploy && next build",
+  "start_command": "next start",
+  "node_version": "20"
+}

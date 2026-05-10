@@ -1,0 +1,12 @@
+node_modules
+.next
+.env
+.env.local
+dev.db
+dev.db-journal
+dist
+build
+*.log
+.DS_Store
+.vercel
+.turbo

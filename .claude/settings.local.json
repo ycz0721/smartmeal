@@ -39,7 +39,22 @@
       "Bash(git init *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(ssh -o StrictHostKeyChecking=no -T git@github.com)",
+      "Bash(gh auth *)",
+      "Bash(ssh *)",
+      "WebFetch(domain:8.134.146.192)",
+      "Read(//root/**)",
+      "Bash(tar -czf deploy.tar.gz --exclude='node_modules' --exclude='.next' --exclude='.git' --exclude='prisma/dev.db' .)",
+      "Bash(tar *)",
+      "Bash(mkdir /tmp/smartmeal-patch)",
+      "Bash(cp /d/smartmeal/src/app/api/profile/prefs/route.ts /tmp/smartmeal-patch/prefs.ts)",
+      "Bash(cp /d/smartmeal/src/app/\\\\\\(main\\\\\\)/plan/page.tsx /tmp/smartmeal-patch/plan-page.tsx)",
+      "Bash(cp /d/smartmeal/src/app/\\\\\\(main\\\\\\)/profile/settings/intolerances/page.tsx /tmp/smartmeal-patch/intolerances.tsx)",
+      "Bash(cp /d/smartmeal/src/app/api/plan/cook-deduct/route.ts /tmp/smartmeal-patch/cook-deduct.ts)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

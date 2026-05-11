@@ -4,42 +4,52 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUserPrefs } from '@/stores/userPrefs';
 import { toast } from 'sonner';
 
 export default function IntolerancesPage() {
   const router = useRouter();
-  const { intolerances, setIntolerances } = useUserPrefs();
   const [items, setItems] = useState<string[]>([]);
   const [input, setInput] = useState('');
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/profile/prefs')
+    fetch('/api/user/intolerances')
       .then((res) => res.ok && res.json())
       .then((data) => {
-        if (data?.intolerances?.length) {
-          setItems(data.intolerances);
-          setIntolerances(data.intolerances);
-        }
+        if (data?.intolerances) setItems(data.intolerances);
       })
-      .catch(() => {})
-      .finally(() => setLoaded(true));
+      .finally(() => setLoading(false));
   }, []);
 
-  const addItem = () => {
+  const addItem = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
     if (items.includes(trimmed)) {
       toast.error('该食材已存在');
       return;
     }
-    setItems((prev) => [...prev, trimmed]);
     setInput('');
+    setItems((prev) => [...prev, trimmed]);
+    fetch('/api/user/intolerances', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: trimmed }),
+    }).catch(() => {
+      setItems((prev) => prev.filter((i) => i !== trimmed));
+      toast.error('添加失败');
+    });
   };
 
   const removeItem = (name: string) => {
     setItems((prev) => prev.filter((i) => i !== name));
+    fetch('/api/user/intolerances', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: name }),
+    }).catch(() => {
+      setItems((prev) => [...prev, name]);
+      toast.error('删除失败');
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -49,24 +59,8 @@ export default function IntolerancesPage() {
     }
   };
 
-  const handleSave = async () => {
-    setIntolerances(items);
-    try {
-      await fetch('/api/profile/prefs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intolerances: items }),
-      });
-      toast.success('已保存');
-    } catch {
-      toast.error('保存失败，请重试');
-    }
-    router.back();
-  };
-
   return (
     <div className="pb-8">
-      {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-[#EEEEEE] bg-white">
         <button onClick={() => router.back()} className="p-1">
           <ArrowLeft className="w-5 h-5 text-brand-text" />
@@ -75,7 +69,6 @@ export default function IntolerancesPage() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Title & Description */}
         <div>
           <h2 className="text-lg font-bold text-brand-text">避开不适合你的食物！</h2>
           <p className="text-sm text-brand-secondary mt-1">
@@ -83,7 +76,6 @@ export default function IntolerancesPage() {
           </p>
         </div>
 
-        {/* Input area */}
         <div className="flex gap-2">
           <input
             type="text"
@@ -98,8 +90,9 @@ export default function IntolerancesPage() {
           </Button>
         </div>
 
-        {/* Tags */}
-        {items.length > 0 && (
+        {loading ? (
+          <div className="text-center text-sm text-brand-secondary py-4">加载中...</div>
+        ) : items.length > 0 ? (
           <div className="flex gap-2 flex-wrap">
             {items.map((item) => (
               <span
@@ -116,14 +109,11 @@ export default function IntolerancesPage() {
               </span>
             ))}
           </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-sm text-brand-secondary">还没有添加不耐受食物</p>
+          </div>
         )}
-      </div>
-
-      {/* Save button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-[#EEEEEE] z-10">
-        <Button onClick={handleSave} className="w-full h-12 rounded-lg text-base">
-          保存
-        </Button>
       </div>
     </div>
   );

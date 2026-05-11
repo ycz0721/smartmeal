@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUserPrefs } from '@/stores/userPrefs';
 import { toast } from 'sonner';
 
 export default function IntolerancesPage() {
   const router = useRouter();
+  const { setIntolerances } = useUserPrefs();
   const [items, setItems] = useState<string[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,10 @@ export default function IntolerancesPage() {
     fetch('/api/user/intolerances')
       .then((res) => res.ok && res.json())
       .then((data) => {
-        if (data?.intolerances) setItems(data.intolerances);
+        if (data?.intolerances) {
+        setItems(data.intolerances);
+        setIntolerances(data.intolerances);
+      }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -29,25 +34,33 @@ export default function IntolerancesPage() {
       return;
     }
     setInput('');
-    setItems((prev) => [...prev, trimmed]);
+    const next = [...items, trimmed];
+    setItems(next);
+    setIntolerances(next);
     fetch('/api/user/intolerances', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ item: trimmed }),
     }).catch(() => {
-      setItems((prev) => prev.filter((i) => i !== trimmed));
+      const reverted = items.filter((i) => i !== trimmed);
+      setItems(reverted);
+      setIntolerances(reverted);
       toast.error('添加失败');
     });
   };
 
   const removeItem = (name: string) => {
-    setItems((prev) => prev.filter((i) => i !== name));
+    const next = items.filter((i) => i !== name);
+    setItems(next);
+    setIntolerances(next);
     fetch('/api/user/intolerances', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ item: name }),
     }).catch(() => {
-      setItems((prev) => [...prev, name]);
+      const reverted = [...items, name];
+      setItems(reverted);
+      setIntolerances(reverted);
       toast.error('删除失败');
     });
   };

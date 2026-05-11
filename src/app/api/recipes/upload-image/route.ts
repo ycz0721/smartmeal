@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     }
     await writeFile(path.join(uploadDir, filename), savedBuffer);
 
-    const imageUrl = `/uploads/${filename}`;
+    const imageUrl = `/api/uploads/${filename}`;
 
     // Resize for AI analysis (max 1024px, JPEG, quality 75)
     const aiBuffer = Buffer.from(await sharp(buffer)

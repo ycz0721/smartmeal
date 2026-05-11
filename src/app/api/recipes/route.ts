@@ -23,6 +23,8 @@ export async function GET(req: Request) {
 
     if (favorite === 'true') {
       where.favorite = true;
+    } else {
+      where.source = { not: '收藏' };
     }
 
     const recipes = await prisma.recipe.findMany({

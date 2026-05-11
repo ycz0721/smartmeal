@@ -10,6 +10,7 @@ import { Clock, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { GeneratePlanSheet } from '@/components/GeneratePlanSheet';
 import { ManagePlanSheet } from '@/components/ManagePlanSheet';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 
 interface DishItem {
   recipeId: string;
@@ -50,6 +51,7 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [generateSheetOpen, setGenerateSheetOpen] = useState(false);
   const [manageSheetOpen, setManageSheetOpen] = useState(false);
+  const [selectedDish, setSelectedDish] = useState<DishItem | null>(null);
   const { cuisines, intolerances, dietary, familySize } = useUserPrefs();
 
   useEffect(() => {
@@ -340,7 +342,8 @@ export default function PlanPage() {
                     {dishes.map((dish, di) => (
                       <Card
                         key={di}
-                        className="overflow-hidden"
+                        className="overflow-hidden cursor-pointer active:opacity-80"
+                        onClick={() => setSelectedDish(dish)}
                       >
                         <div className="aspect-[4/3] bg-gray-200 relative">
                           {dish.imageUrl ? (
@@ -497,6 +500,54 @@ export default function PlanPage() {
         planId={plan?.id}
         dayMeals={dayMeals}
       />
+
+      {/* Dish Detail Sheet */}
+      <BottomSheet open={!!selectedDish} onOpenChange={(open) => !open && setSelectedDish(null)}>
+        {selectedDish && (
+          <div className="px-6 pb-8 space-y-4">
+            <h3 className="text-card-title text-brand-text text-center">{selectedDish.name}</h3>
+            {selectedDish.cookTime > 0 && (
+              <div className="flex items-center justify-center gap-2 text-sm text-brand-secondary">
+                <Clock className="w-4 h-4" />
+                <span>{selectedDish.cookTime}分钟</span>
+              </div>
+            )}
+            {selectedDish.tags && selectedDish.tags.length > 0 && (
+              <div className="flex justify-center gap-2 flex-wrap">
+                {selectedDish.tags.map((tag) => (
+                  <span key={tag} className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-500">{tag}</span>
+                ))}
+              </div>
+            )}
+            {selectedDish.ingredients && selectedDish.ingredients.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold text-brand-text mb-2">食材清单</h4>
+                <div className="space-y-1">
+                  {selectedDish.ingredients.map((ing: any, i: number) => (
+                    <div key={i} className="flex justify-between text-sm text-brand-secondary">
+                      <span>{ing.name}</span>
+                      <span>{ing.amount}{ing.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {selectedDish.steps && selectedDish.steps.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold text-brand-text mb-2">烹饪步骤</h4>
+                <ol className="space-y-2">
+                  {selectedDish.steps.map((step: string, i: number) => (
+                    <li key={i} className="flex gap-2 text-sm text-brand-secondary">
+                      <span className="font-bold text-orange-500 flex-shrink-0">{i + 1}.</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+        )}
+      </BottomSheet>
     </div>
   );
 }

@@ -12,17 +12,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '未授权' }, { status: 401 });
     }
 
-    const { recipeId } = await req.json();
+    const { recipeId, ingredients: fallbackIngredients } = await req.json();
     if (!recipeId) {
       return NextResponse.json({ error: '缺少食谱ID' }, { status: 400 });
     }
 
+    let ingredients: any[];
     const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
-    if (!recipe || recipe.userId !== session.user.id) {
+    if (recipe && recipe.userId === session.user.id) {
+      ingredients = JSON.parse(recipe.ingredients);
+    } else if (fallbackIngredients && Array.isArray(fallbackIngredients)) {
+      ingredients = fallbackIngredients;
+    } else {
       return NextResponse.json({ error: '食谱未找到' }, { status: 404 });
     }
 
-    const ingredients = JSON.parse(recipe.ingredients);
     let deducted = 0;
 
     for (const ing of ingredients) {

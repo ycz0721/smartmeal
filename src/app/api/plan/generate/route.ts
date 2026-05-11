@@ -203,11 +203,18 @@ export async function POST(req: Request) {
     });
 
     // Auto-reconcile shopping list after generating new plan
-    const shoppingItems = await reconcileShoppingList(session.user.id);
+    let shoppingCount = 0;
+    try {
+      const shoppingItems = await reconcileShoppingList(session.user.id);
+      shoppingCount = shoppingItems.length;
+    } catch (e) {
+      console.error('同步购物清单失败:', e);
+    }
 
-    return NextResponse.json({ plan, shoppingCount: shoppingItems.length });
+    return NextResponse.json({ plan, shoppingCount });
   } catch (error) {
     console.error('生成计划失败:', error);
-    return NextResponse.json({ error: '生成计划失败' }, { status: 500 });
+    const message = error instanceof Error ? error.message : '生成计划失败';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

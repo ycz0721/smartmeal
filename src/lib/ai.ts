@@ -18,7 +18,7 @@ export async function callAI<T>(systemPrompt: string, userPrompt: string): Promi
       { role: 'user', content: userPrompt },
     ],
     response_format: { type: 'json_object' },
-  });
+  }, { timeout: 30000 });
 
   const content = response.choices[0].message.content || '{}';
   return JSON.parse(content) as T;

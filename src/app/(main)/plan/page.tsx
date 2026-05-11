@@ -50,12 +50,26 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [generateSheetOpen, setGenerateSheetOpen] = useState(false);
   const [manageSheetOpen, setManageSheetOpen] = useState(false);
-  const { cuisines, intolerances, dietary, familySize } = useUserPrefs();
+  const { cuisines, intolerances, dietary, familySize, setCuisines, setIntolerances, setDietary, setFamilySize } = useUserPrefs();
 
   useEffect(() => {
     fetchCurrentPlan();
     fetchHistory();
+    fetchUserPrefs();
   }, []);
+
+  const fetchUserPrefs = async () => {
+    try {
+      const res = await fetch('/api/profile/prefs');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.cuisines) setCuisines(data.cuisines);
+        if (data.intolerances) setIntolerances(data.intolerances);
+        if (data.dietary) setDietary(data.dietary);
+        if (data.familySize) setFamilySize(data.familySize);
+      }
+    } catch {}
+  };
 
   const fetchCurrentPlan = async () => {
     try {
@@ -108,9 +122,12 @@ export default function PlanPage() {
         setPlan(data.plan);
         fetchHistory();
         toast.success(`已生成计划并自动同步 ${data.shoppingCount} 种食材到购物清单`);
+      } else {
+        const err = await res.json().catch(() => ({ error: '请求失败' }));
+        toast.error(err.error || '生成计划失败，请重试');
       }
     } catch (error) {
-      console.error('生成计划失败:', error);
+      toast.error('网络错误，请检查连接后重试');
     } finally {
       setLoading(false);
     }
@@ -151,19 +168,19 @@ export default function PlanPage() {
     } catch {}
   };
 
-  const getRecipeIds = (dayMeal?: DayMeal): string[] => {
-    const ids: string[] = [];
+  const getDishes = (dayMeal?: DayMeal): { recipeId: string; ingredients: any[] }[] => {
+    const result: { recipeId: string; ingredients: any[] }[] = [];
     const days = dayMeal ? [dayMeal] : dayMeals;
     for (const day of days) {
       const types = getMealTypesForDay(day);
       for (const mt of types) {
         const group = day[mt] as MealTypeGroup;
         for (const dish of group?.dishes || []) {
-          if (dish.recipeId) ids.push(dish.recipeId);
+          if (dish.recipeId) result.push({ recipeId: dish.recipeId, ingredients: dish.ingredients || [] });
         }
       }
     }
-    return ids;
+    return result;
   };
 
   const handleFavorite = async (e: React.MouseEvent, dish: DishItem) => {
@@ -196,15 +213,15 @@ export default function PlanPage() {
 
   const handleCookDay = async () => {
     if (!currentDay) return;
-    const ids = getRecipeIds(currentDay);
-    if (ids.length === 0) return;
+    const dishes = getDishes(currentDay);
+    if (dishes.length === 0) return;
     setCooking(true);
     let done = 0;
-    for (const id of ids) {
+    for (const dish of dishes) {
       const res = await fetch('/api/plan/cook-deduct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipeId: id }),
+        body: JSON.stringify({ recipeId: dish.recipeId, ingredients: dish.ingredients }),
       });
       if (res.ok) done++;
     }
@@ -212,19 +229,19 @@ export default function PlanPage() {
     setCookedDays(next);
     persistCooked(next);
     setCooking(false);
-    toast.success(`已烹饪 ${done}/${ids.length} 道菜`);
+    toast.success(`已烹饪 ${done}/${dishes.length} 道菜`);
   };
 
   const handleCookWeek = async () => {
-    const ids = getRecipeIds();
-    if (ids.length === 0) return;
+    const dishes = getDishes();
+    if (dishes.length === 0) return;
     setCooking(true);
     let done = 0;
-    for (const id of ids) {
+    for (const dish of dishes) {
       const res = await fetch('/api/plan/cook-deduct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipeId: id }),
+        body: JSON.stringify({ recipeId: dish.recipeId, ingredients: dish.ingredients }),
       });
       if (res.ok) done++;
     }
@@ -232,7 +249,7 @@ export default function PlanPage() {
     setCookedDays(next);
     persistCooked(next);
     setCooking(false);
-    toast.success(`本周已烹饪 ${done}/${ids.length} 道菜`);
+    toast.success(`本周已烹饪 ${done}/${dishes.length} 道菜`);
   };
 
   const parseMeals = (): DayMeal[] => {

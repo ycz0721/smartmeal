@@ -39,9 +39,18 @@ export default function IntolerancesPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIntolerances(items);
-    toast.success('已保存');
+    try {
+      await fetch('/api/profile/prefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intolerances: items }),
+      });
+      toast.success('已保存');
+    } catch {
+      toast.error('保存失败，请重试');
+    }
     router.back();
   };
 

@@ -12,10 +12,20 @@ export default function IntolerancesPage() {
   const { intolerances, setIntolerances } = useUserPrefs();
   const [items, setItems] = useState<string[]>([]);
   const [input, setInput] = useState('');
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setItems([...intolerances]);
-  }, [intolerances]);
+    fetch('/api/profile/prefs')
+      .then((res) => res.ok && res.json())
+      .then((data) => {
+        if (data?.intolerances?.length) {
+          setItems(data.intolerances);
+          setIntolerances(data.intolerances);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, []);
 
   const addItem = () => {
     const trimmed = input.trim();

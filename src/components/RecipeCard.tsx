@@ -24,11 +24,15 @@ export function RecipeCard({
   return (
     <Link href={`/recipes/${id}`}>
       <Card className="hover:shadow-md transition-shadow">
-        {imageUrl && (
-          <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+        <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+          {imageUrl ? (
             <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-orange-50">
+              <span className="text-4xl font-bold text-orange-500">{title.charAt(0)}</span>
+            </div>
+          )}
+        </div>
         <CardContent className="p-4">
           <h3 className="font-semibold text-lg mb-1">{title}</h3>
           <p className="text-sm text-gray-600 mb-2 line-clamp-2">{description}</p>

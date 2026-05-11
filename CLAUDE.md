@@ -71,25 +71,36 @@ src/
 
 ## 部署流程
 
-1. 本机改代码 → `git commit` → `git push origin master`
-2. 服务器：`cd /tmp/smartmeal2 && git pull`
-3. 复制源码：`rm -rf /root/smartmeal/src && cp -r /tmp/smartmeal2/src /root/smartmeal/src`
-4. 构建：`cd /root/smartmeal && npm run build`
-5. 重启：`pm2 restart all`
-6. 访问 `http://8.134.146.192:3000`
+**核心原则：本地构建通过再推送，服务器一条命令部署。**
+
+1. 本机改代码 → `git commit` → 本地 `npm run build` 通过 → `git push origin master`
+2. 服务器：`cd /root/smartmeal && git pull && npm run build && pm2 restart all`
+3. 访问 `http://8.134.146.192:3000`
+
+注意：服务器 `/root/smartmeal` 本身就是 git 仓库，直连 GitHub，不再通过 `/tmp` 中转复制文件。
 
 ## 踩过的坑
 
 1. **NextAuth v5 + IP 访问**：部署到阿里云用 IP 直连，必须加 `AUTH_TRUST_HOST=true`，否则 UntrustedHost 错误
-2. **SQLite → PostgreSQL 迁移**：删 prisma/migrations 目录后重新 `prisma migrate dev`
+2. **SQLite → PostgreSQL 迁移**：删 prisma/migrations 目录后用 `prisma db push` 直接同步 schema
 3. **Prisma 连接权限**：PostgreSQL 用户需要 CREATEDB 权限：`ALTER USER smartmeal CREATEDB`
 4. **服务器 .env 有两行 DATABASE_URL**：删掉旧的 SQLite 行，只留 PostgreSQL
-5. **cp 命令用相对路径会翻车**：rm 完目录后相对路径找不到源，始终用绝对路径
+5. **废弃 cp 部署方式**：以前 `rm -rf src && cp -r /tmp/smartmeal2/src` 翻过车（rm 完 cp 失败导致目录空），服务器目录已改为 git 直连
 6. **计划菜品 cooking 扣减失败**：菜品 recipeId 不在 Recipe 表，要传 ingredients 给 API
+7. **Next.js 生产环境不提供运行时新增的 public 文件**：用户上传的图片不能通过 `/uploads/xxx` 访问，必须走 API 路由 `/api/uploads/[filename]` 读取磁盘文件
+8. **Next.js 15 路由参数是异步的**：`params` 是 `Promise<{ filename: string }>`，必须 `await` 解包
+
+## 为什么老出错的根因 & 改进
+
+**根因：没有本地构建验证。** Next.js `npm run build` 会做类型检查和编译，大多数错误在这一步就能暴露。以前跳过本地构建，直接推到服务器才 build，问题延迟到生产才发现。
+
+**改进后的铁律：**
+1. 本地改完 → `npm run build` → 通过才 push（不通过就修，不带到服务器上）
+2. 服务器 `/root/smartmeal` 已是 git 仓库，再也不需要 cp 搬文件
+3. 部署后打开浏览器逐项验证关键功能
 
 ## 当前已知问题
 
 - 没有 HTTPS（裸 HTTP）
 - 没有数据库自动备份
 - 用户偏好设置缺少入口（菜系、饮食限制、家庭人数无法修改，只有"食物不耐受"可设）
-- 食谱无真实图片（仅显示首字占位符）

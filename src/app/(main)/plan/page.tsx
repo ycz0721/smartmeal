@@ -50,26 +50,12 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [generateSheetOpen, setGenerateSheetOpen] = useState(false);
   const [manageSheetOpen, setManageSheetOpen] = useState(false);
-  const { cuisines, intolerances, dietary, familySize, setCuisines, setIntolerances, setDietary, setFamilySize } = useUserPrefs();
+  const { cuisines, intolerances, dietary, familySize } = useUserPrefs();
 
   useEffect(() => {
     fetchCurrentPlan();
     fetchHistory();
-    fetchUserPrefs();
   }, []);
-
-  const fetchUserPrefs = async () => {
-    try {
-      const res = await fetch('/api/profile/prefs');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.cuisines) setCuisines(data.cuisines);
-        if (data.intolerances) setIntolerances(data.intolerances);
-        if (data.dietary) setDietary(data.dietary);
-        if (data.familySize) setFamilySize(data.familySize);
-      }
-    } catch {}
-  };
 
   const fetchCurrentPlan = async () => {
     try {

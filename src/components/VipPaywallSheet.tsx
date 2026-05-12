@@ -12,12 +12,35 @@ export function VipPaywallSheet({ open, onOpenChange }: VipPaywallSheetProps) {
   const [copied, setCopied] = useState(false);
   const wechatId = 'ycz0721k';
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     try {
-      await navigator.clipboard.writeText(wechatId);
+      // Fallback for HTTP sites where navigator.clipboard is unavailable
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(wechatId).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        }).catch(() => fallbackCopy());
+      } else {
+        fallbackCopy();
+      }
+    } catch {
+      fallbackCopy();
+    }
+  };
+
+  const fallbackCopy = () => {
+    const textarea = document.createElement('textarea');
+    textarea.value = wechatId;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {}
+    document.body.removeChild(textarea);
   };
 
   return (
@@ -28,7 +51,7 @@ export function VipPaywallSheet({ open, onOpenChange }: VipPaywallSheetProps) {
         </h3>
 
         <p className="text-sm text-[#CCCCCC] text-center">
-          添加开发者微信，联系开发者开通会员
+          添加开发者微信，联系开发者开通会员，才能使用生成本周计划食谱功能
         </p>
 
         <div className="flex items-center gap-3 bg-[#2A2A2A] rounded-xl px-4 py-3">

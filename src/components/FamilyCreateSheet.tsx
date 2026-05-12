@@ -31,13 +31,35 @@ export function FamilyCreateSheet({ open, onOpenChange }: FamilyCreateSheetProps
     if (open) fetchData();
   }, [open]);
 
-  const handleCopy = async () => {
+  const fallbackCopy = (text: string) => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(textarea);
+  };
+
+  const handleCopy = () => {
     if (!data?.inviteCode) return;
     try {
-      await navigator.clipboard.writeText(data.inviteCode);
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(data.inviteCode).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        }).catch(() => { fallbackCopy(data.inviteCode); setCopied(true); setTimeout(() => setCopied(false), 1500); });
+      } else {
+        fallbackCopy(data.inviteCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
+    } catch {
+      fallbackCopy(data.inviteCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    }
   };
 
   return (

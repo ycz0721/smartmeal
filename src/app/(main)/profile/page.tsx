@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { SectionHeader } from '@/components/SectionHeader';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { HelpCircle, Settings, AlertTriangle, Heart, Users } from 'lucide-react';
 import { useUserPrefs } from '@/stores/userPrefs';
 
@@ -27,6 +28,7 @@ export default function ProfilePage() {
   const [favLoading, setFavLoading] = useState(true);
   const { mealPeople, setMealPeople } = useUserPrefs();
   const [mealPeopleInput, setMealPeopleInput] = useState('');
+  const [mealPeopleSheetOpen, setMealPeopleSheetOpen] = useState(false);
 
   useEffect(() => {
     fetchFavorites();
@@ -106,19 +108,45 @@ export default function ProfilePage() {
             <span className="truncate">{item.label}</span>
           </button>
         ))}
-        <div className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm">
+        <button
+          onClick={() => {
+            setMealPeopleInput(mealPeople);
+            setMealPeopleSheetOpen(true);
+          }}
+          className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm text-brand-text hover:bg-gray-50 transition-colors"
+        >
           <Users className="w-4 h-4 text-orange-500 flex-shrink-0" />
+          <span className="truncate">家庭用餐人数</span>
+          {mealPeople && (
+            <span className="text-xs text-orange-500 ml-auto truncate">{mealPeople}</span>
+          )}
+        </button>
+      </div>
+
+      {/* Meal People BottomSheet */}
+      <BottomSheet open={mealPeopleSheetOpen} onOpenChange={setMealPeopleSheetOpen} className="bg-[#1E1E1E]">
+        <div className="px-6 pb-8 space-y-5">
+          <h3 className="text-lg font-bold text-white text-center" style={{ color: '#FFFFFF' }}>
+            家庭用餐人数
+          </h3>
           <input
             type="text"
-            placeholder="如：2大人1小孩"
+            autoFocus
+            placeholder="如：2个大人1个小孩"
             value={mealPeopleInput}
             onChange={(e) => setMealPeopleInput(e.target.value)}
-            onBlur={() => saveMealPeople(mealPeopleInput)}
-            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-            className="flex-1 min-w-0 bg-transparent text-brand-text placeholder:text-[#999999] focus:outline-none"
+            onKeyDown={(e) => { if (e.key === 'Enter') { saveMealPeople(mealPeopleInput); setMealPeopleSheetOpen(false); } }}
+            className="w-full h-11 rounded-[10px] px-4 text-sm text-white placeholder:text-[#888888] focus:outline-none"
+            style={{ backgroundColor: '#2A2A2A' }}
           />
+          <button
+            onClick={() => { saveMealPeople(mealPeopleInput); setMealPeopleSheetOpen(false); }}
+            className="w-full h-11 rounded-[10px] bg-[#F97316] text-white text-sm font-medium hover:bg-orange-600 transition-colors"
+          >
+            保存
+          </button>
         </div>
-      </div>
+      </BottomSheet>
 
       {/* My Favorites */}
       <div className="space-y-3">

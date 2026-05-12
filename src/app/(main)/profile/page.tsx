@@ -150,7 +150,7 @@ export default function ProfilePage() {
 
       {/* My Favorites */}
       <div className="space-y-3">
-        <SectionHeader title="我的收藏" showViewAll onViewAll={() => router.push('/recipes')} />
+        <SectionHeader title="我的收藏" showViewAll onViewAll={() => router.push('/recipes?favorite=true')} />
         {favLoading ? (
           <div className="space-y-2">
             {[1, 2].map((i) => (

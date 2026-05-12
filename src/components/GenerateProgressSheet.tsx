@@ -51,7 +51,7 @@ export function GenerateProgressSheet({ open, status, onRetry }: GenerateProgres
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
-      }, 3000);
+      }, 4000);
 
       // Start tip rotation
       let tip = 0;

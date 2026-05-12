@@ -45,6 +45,20 @@ const MEAL_TYPE_EMOJI: Record<string, string> = {
   dinner: '🌙',
 };
 
+function getDishPlaceholder(tags: string[], name: string) {
+  const tagStr = tags.join(',');
+  if (/肉|鸡|猪|牛|羊/.test(tagStr)) {
+    return { emoji: '🍗', gradient: 'linear-gradient(135deg, #FF6B6B, #FF8E53)' };
+  }
+  if (/海鲜|鱼|虾|蟹/.test(tagStr)) {
+    return { emoji: '🐟', gradient: 'linear-gradient(135deg, #4FACFE, #00F2FE)' };
+  }
+  if (/蔬菜|菠菜|青菜|素/.test(tagStr)) {
+    return { emoji: '🥦', gradient: 'linear-gradient(135deg, #43E97B, #38F9D7)' };
+  }
+  return { emoji: '🍽️', gradient: 'linear-gradient(135deg, #F97316, #FBBF24)' };
+}
+
 export default function PlanPage() {
   const router = useRouter();
   const [plan, setPlan] = useState<any>(null);
@@ -373,9 +387,17 @@ export default function PlanPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-orange-50">
-                              <span className="text-3xl font-bold text-orange-500">{dish.name.charAt(0)}</span>
-                            </div>
+                            (() => {
+                              const placeholder = getDishPlaceholder(dish.tags || [], dish.name);
+                              return (
+                                <div
+                                  className="w-full h-full flex items-center justify-center"
+                                  style={{ background: placeholder.gradient }}
+                                >
+                                  <span className="text-5xl">{placeholder.emoji}</span>
+                                </div>
+                              );
+                            })()
                           )}
                           {/* Favorite heart */}
                           <button

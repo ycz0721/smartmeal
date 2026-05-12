@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { GeneratePlanSheet } from '@/components/GeneratePlanSheet';
 import { ManagePlanSheet } from '@/components/ManagePlanSheet';
 import { GenerateProgressSheet } from '@/components/GenerateProgressSheet';
+import { VipPaywallSheet } from '@/components/VipPaywallSheet';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 
 interface DishItem {
@@ -69,6 +70,8 @@ export default function PlanPage() {
   const [selectedDish, setSelectedDish] = useState<DishItem | null>(null);
   const [progressStatus, setProgressStatus] = useState<'generating' | 'success' | 'error'>('generating');
   const [progressOpen, setProgressOpen] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [pendingGenerate, setPendingGenerate] = useState<any>(null);
   const { cuisines, intolerances, dietary, familySize, mealPeople } = useUserPrefs();
 
   useEffect(() => {
@@ -100,14 +103,29 @@ export default function PlanPage() {
     }
   };
 
-  const handleGenerate = async ({ prompt, mealTypes, dishCombo, kidsRequest }: {
+  const checkVipThenGenerate = async (params: { prompt: string; mealTypes: string[]; dishCombo: string; kidsRequest: string }) => {
+    setGenerateSheetOpen(false);
+    try {
+      const res = await fetch('/api/user/vip-status');
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.isVip) {
+          setPendingGenerate(params);
+          setPaywallOpen(true);
+          return;
+        }
+      }
+    } catch {}
+    doGenerate(params);
+  };
+
+  const doGenerate = async ({ prompt, mealTypes, dishCombo, kidsRequest }: {
     prompt: string;
     mealTypes: string[];
     dishCombo: string;
     kidsRequest: string;
   }) => {
     setLoading(true);
-    setGenerateSheetOpen(false);
     setProgressStatus('generating');
     setProgressOpen(true);
     try {
@@ -533,13 +551,17 @@ export default function PlanPage() {
       <GeneratePlanSheet
         open={generateSheetOpen}
         onOpenChange={setGenerateSheetOpen}
-        onGenerate={handleGenerate}
+        onGenerate={checkVipThenGenerate}
         loading={loading}
       />
       <GenerateProgressSheet
         open={progressOpen}
         status={progressStatus}
         onRetry={handleRetry}
+      />
+      <VipPaywallSheet
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
       />
       <ManagePlanSheet
         open={manageSheetOpen}

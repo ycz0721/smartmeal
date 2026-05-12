@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { SectionHeader } from '@/components/SectionHeader';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { FamilyCreateSheet } from '@/components/FamilyCreateSheet';
+import { FamilyJoinSheet } from '@/components/FamilyJoinSheet';
 import { HelpCircle, Settings, AlertTriangle, Heart, Users } from 'lucide-react';
 import { useUserPrefs } from '@/stores/userPrefs';
 
@@ -29,10 +31,24 @@ export default function ProfilePage() {
   const { mealPeople, setMealPeople } = useUserPrefs();
   const [mealPeopleInput, setMealPeopleInput] = useState('');
   const [mealPeopleSheetOpen, setMealPeopleSheetOpen] = useState(false);
+  const [familyCreateOpen, setFamilyCreateOpen] = useState(false);
+  const [familyJoinOpen, setFamilyJoinOpen] = useState(false);
+  const [hasFamily, setHasFamily] = useState(false);
+
+  const fetchFamilyInfo = async () => {
+    try {
+      const res = await fetch('/api/family/info');
+      if (res.ok) {
+        const data = await res.json();
+        setHasFamily(!!data.space);
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     fetchFavorites();
     fetchMealPeople();
+    fetchFamilyInfo();
   }, []);
 
   useEffect(() => {
@@ -122,6 +138,30 @@ export default function ProfilePage() {
           )}
         </button>
       </div>
+
+      {/* Family Space Buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setFamilyCreateOpen(true)}
+          className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm text-brand-text hover:bg-gray-50 transition-colors"
+        >
+          <span className="text-base flex-shrink-0">🏠</span>
+          <span className="truncate">创建家庭空间</span>
+        </button>
+        {!hasFamily && (
+          <button
+            onClick={() => setFamilyJoinOpen(true)}
+            className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm text-brand-text hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-base flex-shrink-0">➕</span>
+            <span className="truncate">加入家庭空间</span>
+          </button>
+        )}
+      </div>
+
+      {/* Family Sheets */}
+      <FamilyCreateSheet open={familyCreateOpen} onOpenChange={setFamilyCreateOpen} />
+      <FamilyJoinSheet open={familyJoinOpen} onOpenChange={setFamilyJoinOpen} />
 
       {/* Meal People BottomSheet */}
       <BottomSheet open={mealPeopleSheetOpen} onOpenChange={setMealPeopleSheetOpen} className="bg-[#1E1E1E]">

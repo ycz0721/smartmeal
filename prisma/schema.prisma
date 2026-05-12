@@ -17,11 +17,15 @@ model User {
   dietary      String?
   familySize   Int            @default(2)
   mealPeople   String?
+  isVip        Boolean        @default(false)
+  vipExpireAt  DateTime?
   createdAt    DateTime       @default(now())
   recipes      Recipe[]
   plans        MealPlan[]
   pantry       PantryItem[]
   shopping     ShoppingItem[]
+  ownedFamily  FamilySpace[]  @relation("FamilyOwner")
+  familyMember FamilyMember[]
 }
 
 model Recipe {
@@ -73,4 +77,24 @@ model ShoppingItem {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name, unit])
+}
+
+model FamilySpace {
+  id         String         @id @default(cuid())
+  inviteCode String         @unique
+  ownerId    String
+  owner      User           @relation("FamilyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now())
+  members    FamilyMember[]
+}
+
+model FamilyMember {
+  id       String      @id @default(cuid())
+  spaceId   String
+  space    FamilySpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime    @default(now())
+
+  @@unique([spaceId, userId])
 }

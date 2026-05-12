@@ -178,7 +178,7 @@ src/
 **核心原则：本地构建通过再推送，服务器一条命令部署。**
 
 1. 本机改代码 → `git commit` → 本地 `npm run build` 通过 → `git push origin master`
-2. 服务器：`cd /root/smartmeal && git pull && npm run build && pm2 restart all`
+2. 服务器：`cd /root/smartmeal && git pull && npx prisma db push && npm run build && npx pm2 restart all`
 3. 访问 `http://8.134.146.192:3000`
 
 注意：服务器 `/root/smartmeal` 本身就是 git 仓库，直连 GitHub，不再通过 `/tmp` 中转复制文件。
@@ -193,6 +193,8 @@ src/
 6. **计划菜品 cooking 扣减失败**：菜品 recipeId 不在 Recipe 表，要传 ingredients 给 API
 7. **Next.js 生产环境不提供运行时新增的 public 文件**：用户上传的图片不能通过 `/uploads/xxx` 访问，必须走 API 路由 `/api/uploads/[filename]` 读取磁盘文件
 8. **Next.js 15 路由参数是异步的**：`params` 是 `Promise<{ filename: string }>`，必须 `await` 解包
+9. **pm2 命令不在全局 PATH**：服务器上必须用 `npx pm2 restart all`，不能用 `pm2 restart all`（会报 Command not found）
+10. **服务器 git pull 可能分叉**：如果服务器直接 commit 过，用 `git fetch origin && git reset --hard origin/master` 强制同步
 
 ## 为什么老出错的根因 & 改进
 

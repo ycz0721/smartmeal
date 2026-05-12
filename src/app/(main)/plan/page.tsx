@@ -52,7 +52,7 @@ export default function PlanPage() {
   const [generateSheetOpen, setGenerateSheetOpen] = useState(false);
   const [manageSheetOpen, setManageSheetOpen] = useState(false);
   const [selectedDish, setSelectedDish] = useState<DishItem | null>(null);
-  const { cuisines, intolerances, dietary, familySize } = useUserPrefs();
+  const { cuisines, intolerances, dietary, familySize, mealPeople } = useUserPrefs();
 
   useEffect(() => {
     fetchCurrentPlan();
@@ -83,10 +83,11 @@ export default function PlanPage() {
     }
   };
 
-  const handleGenerate = async ({ prompt, mealTypes, dishCombo }: {
+  const handleGenerate = async ({ prompt, mealTypes, dishCombo, kidsRequest }: {
     prompt: string;
     mealTypes: string[];
     dishCombo: string;
+    kidsRequest: string;
   }) => {
     setLoading(true);
     setGenerateSheetOpen(false);
@@ -103,6 +104,8 @@ export default function PlanPage() {
           days: 7,
           mealTypes,
           dishCombo,
+          kidsRequest,
+          mealPeople,
         }),
       });
       if (res.ok) {

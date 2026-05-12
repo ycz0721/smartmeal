@@ -6,7 +6,7 @@ import { useUserPrefs } from '@/stores/userPrefs';
 
 function UserPrefsLoader({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
-  const { setCuisines, setIntolerances, setDietary, setFamilySize } = useUserPrefs();
+  const { setCuisines, setIntolerances, setDietary, setFamilySize, setMealPeople } = useUserPrefs();
 
   useEffect(() => {
     if (!session?.user) return;
@@ -18,6 +18,7 @@ function UserPrefsLoader({ children }: { children: React.ReactNode }) {
           if (data.intolerances) setIntolerances(data.intolerances);
           if (data.dietary) setDietary(data.dietary);
           if (data.familySize) setFamilySize(data.familySize);
+          if (data.mealPeople !== undefined) setMealPeople(data.mealPeople);
         }
       })
       .catch(() => {});

@@ -16,6 +16,7 @@ model User {
   intolerances String?
   dietary      String?
   familySize   Int            @default(2)
+  mealPeople   String?
   createdAt    DateTime       @default(now())
   recipes      Recipe[]
   plans        MealPlan[]

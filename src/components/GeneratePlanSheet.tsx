@@ -10,6 +10,7 @@ interface GeneratePlanSheetProps {
     prompt: string;
     mealTypes: string[];
     dishCombo: string;
+    kidsRequest: string;
   }) => void;
   loading: boolean;
 }
@@ -24,6 +25,7 @@ export function GeneratePlanSheet({ open, onOpenChange, onGenerate, loading }: G
   const [prompt, setPrompt] = useState('');
   const [mealTypes, setMealTypes] = useState<string[]>(['dinner']);
   const [dishCombo, setDishCombo] = useState('');
+  const [kidsRequest, setKidsRequest] = useState('');
 
   const hasInput = prompt.trim().length > 0;
 
@@ -35,10 +37,11 @@ export function GeneratePlanSheet({ open, onOpenChange, onGenerate, loading }: G
 
   const handleGenerate = () => {
     if (!hasInput || mealTypes.length === 0) return;
-    onGenerate({ prompt, mealTypes, dishCombo: dishCombo.trim() || '一荤一素一汤' });
+    onGenerate({ prompt, mealTypes, dishCombo: dishCombo.trim() || '一荤一素一汤', kidsRequest: kidsRequest.trim() });
     setPrompt('');
     setMealTypes(['dinner']);
     setDishCombo('');
+    setKidsRequest('');
   };
 
   return (
@@ -86,6 +89,18 @@ export function GeneratePlanSheet({ open, onOpenChange, onGenerate, loading }: G
             value={dishCombo}
             onChange={(e) => setDishCombo(e.target.value)}
             className="w-full h-10 rounded-xl border border-[#EEEEEE] bg-[#F9F9F9] px-4 text-sm text-brand-text placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+        </div>
+
+        {/* Kids request */}
+        <div>
+          <p className="text-sm text-brand-text mb-3">本周孩子想吃的菜</p>
+          <textarea
+            placeholder="比如：红烧肉、番茄炒蛋、饺子...没有就填无"
+            value={kidsRequest}
+            onChange={(e) => setKidsRequest(e.target.value)}
+            rows={2}
+            className="w-full rounded-xl border border-[#EEEEEE] bg-[#F9F9F9] px-4 py-3 text-sm text-brand-text placeholder:text-[#999999] resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
         </div>
 

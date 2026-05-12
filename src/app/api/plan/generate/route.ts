@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { prompt, cuisines, intolerances, dietary, familySize, days, mealTypes, dishCombo } = body;
+    const { prompt, cuisines, intolerances, dietary, familySize, days, mealTypes, dishCombo, kidsRequest, mealPeople } = body;
     const numDays = days || 6;
     const selectedMealTypes: string[] = mealTypes || ['dinner'];
     const selectedCombo: string = dishCombo || '一荤一素一汤';
@@ -144,6 +144,8 @@ export async function POST(req: Request) {
         dishCombo: selectedCombo,
         recentDishes: recentDishNames,
         pantryItems,
+        kidsRequest: kidsRequest || '',
+        mealPeople: mealPeople || '',
       });
       allMeals = result.meals;
     } catch (aiError) {

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { SectionHeader } from '@/components/SectionHeader';
-import { HelpCircle, Settings, AlertTriangle, Heart } from 'lucide-react';
+import { HelpCircle, Settings, AlertTriangle, Heart, Users } from 'lucide-react';
+import { useUserPrefs } from '@/stores/userPrefs';
 
 const quickSettings = [
   { icon: AlertTriangle, label: '不喜欢的食物', href: '/profile/settings/intolerances' },
@@ -24,10 +25,17 @@ export default function ProfilePage() {
   const name = user?.name || '用户';
   const [favorites, setFavorites] = useState<any[]>([]);
   const [favLoading, setFavLoading] = useState(true);
+  const { mealPeople, setMealPeople } = useUserPrefs();
+  const [mealPeopleInput, setMealPeopleInput] = useState('');
 
   useEffect(() => {
     fetchFavorites();
+    fetchMealPeople();
   }, []);
+
+  useEffect(() => {
+    setMealPeopleInput(mealPeople);
+  }, [mealPeople]);
 
   const fetchFavorites = async () => {
     try {
@@ -40,6 +48,30 @@ export default function ProfilePage() {
       setFavLoading(false);
     }
   };
+
+  const fetchMealPeople = async () => {
+    try {
+      const res = await fetch('/api/profile/prefs');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mealPeople !== undefined) {
+          setMealPeopleInput(data.mealPeople);
+          setMealPeople(data.mealPeople);
+        }
+      }
+    } catch {}
+  };
+
+  const saveMealPeople = useCallback(async (value: string) => {
+    setMealPeople(value);
+    try {
+      await fetch('/api/profile/prefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mealPeople: value }),
+      });
+    } catch {}
+  }, [setMealPeople]);
 
   return (
     <div className="p-4 space-y-6">
@@ -74,6 +106,18 @@ export default function ProfilePage() {
             <span className="truncate">{item.label}</span>
           </button>
         ))}
+        <div className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm">
+          <Users className="w-4 h-4 text-orange-500 flex-shrink-0" />
+          <input
+            type="text"
+            placeholder="如：2大人1小孩"
+            value={mealPeopleInput}
+            onChange={(e) => setMealPeopleInput(e.target.value)}
+            onBlur={() => saveMealPeople(mealPeopleInput)}
+            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+            className="flex-1 min-w-0 bg-transparent text-brand-text placeholder:text-[#999999] focus:outline-none"
+          />
+        </div>
       </div>
 
       {/* My Favorites */}

@@ -13,7 +13,7 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { cuisines: true, intolerances: true, dietary: true, familySize: true },
+      select: { cuisines: true, intolerances: true, dietary: true, familySize: true, mealPeople: true },
     });
 
     if (!user) {
@@ -25,6 +25,7 @@ export async function GET() {
       intolerances: user.intolerances ? user.intolerances.split(',') : [],
       dietary: user.dietary ? user.dietary.split(',') : [],
       familySize: user.familySize,
+      mealPeople: user.mealPeople || '',
     });
   } catch (error) {
     console.error('获取用户偏好失败:', error);
@@ -53,6 +54,9 @@ export async function POST(req: Request) {
     }
     if (body.familySize !== undefined) {
       data.familySize = body.familySize;
+    }
+    if (body.mealPeople !== undefined) {
+      data.mealPeople = body.mealPeople;
     }
 
     await prisma.user.update({

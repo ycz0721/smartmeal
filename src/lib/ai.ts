@@ -113,6 +113,8 @@ export async function generateMealPlan(params: {
   dishCombo?: string;
   recentDishes?: string[];
   pantryItems?: { name: string; amount: number; unit: string }[];
+  kidsRequest?: string;
+  mealPeople?: string;
 }) {
   const extraContext = params.prompt
     ? `用户备注：${params.prompt}\n`
@@ -129,6 +131,16 @@ export async function generateMealPlan(params: {
   else if (dishCombo.includes('两荤一素')) dishesHint = '每餐需要3道：2个荤菜、1个素菜';
   else if (dishCombo.includes('一荤一素')) dishesHint = '每餐需要2道：1个荤菜、1个素菜';
   else if (dishCombo.includes('一菜一汤')) dishesHint = '每餐需要2道：1个菜、1个汤';
+
+  // Kids request
+  const kidsCtx = params.kidsRequest
+    ? `- 【重要】孩子本周想吃的菜：${params.kidsRequest}\n- 请在计划中适当安排这些菜品，但不一定要每餐都有\n`
+    : '';
+
+  // Meal people
+  const mealPeopleCtx = params.mealPeople
+    ? `- 用餐人数说明：${params.mealPeople}\n- 请根据人数调整食材份量，确保每个人都能吃饱\n`
+    : '';
 
   // Recent dishes to avoid
   const recentCtx = params.recentDishes && params.recentDishes.length > 0
@@ -171,7 +183,7 @@ export async function generateMealPlan(params: {
 - 饮食限制：${params.dietary.join('、') || '无'}
 - 不耐受食材：${params.intolerances.join('、') || '无'}
 - 步骤要具体可操作，不要只说"调味"而要写明加什么调料
-${recentCtx}${pantryCtx}`;
+${kidsCtx}${mealPeopleCtx}${recentCtx}${pantryCtx}`;
 
   const userPrompt = `请为我生成${params.days}天的膳食计划，只包含${mealTypesCN}。${extraContext}`;
 

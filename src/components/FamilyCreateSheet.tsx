@@ -31,32 +31,38 @@ export function FamilyCreateSheet({ open, onOpenChange }: FamilyCreateSheetProps
     if (open) fetchData();
   }, [open]);
 
-  const fallbackCopy = (text: string) => {
+  const legacyCopy = (text: string) => {
     const textarea = document.createElement('textarea');
     textarea.value = text;
+    textarea.readOnly = true;
     textarea.style.position = 'fixed';
-    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '2em';
+    textarea.style.height = '2em';
+    textarea.style.opacity = '0';
+    textarea.style.fontSize = '16px';
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
+    textarea.setSelectionRange(0, 99999);
     try { document.execCommand('copy'); } catch {}
     document.body.removeChild(textarea);
   };
 
   const handleCopy = () => {
     if (!data?.inviteCode) return;
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(data.inviteCode).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        }).catch(() => { fallbackCopy(data.inviteCode); setCopied(true); setTimeout(() => setCopied(false), 1500); });
-      } else {
-        fallbackCopy(data.inviteCode);
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(data.inviteCode).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
-      }
-    } catch {
-      fallbackCopy(data.inviteCode);
+      }).catch(() => {
+        legacyCopy(data.inviteCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      });
+    } else {
+      legacyCopy(data.inviteCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }

@@ -13,28 +13,33 @@ export function VipPaywallSheet({ open, onOpenChange }: VipPaywallSheetProps) {
   const wechatId = 'ycz0721k';
 
   const handleCopy = () => {
-    try {
-      // Fallback for HTTP sites where navigator.clipboard is unavailable
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(wechatId).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        }).catch(() => fallbackCopy());
-      } else {
-        fallbackCopy();
-      }
-    } catch {
-      fallbackCopy();
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(wechatId).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }).catch(() => legacyCopy());
+    } else {
+      legacyCopy();
     }
   };
 
-  const fallbackCopy = () => {
+  const legacyCopy = () => {
+    // Use visible but tiny textarea for mobile compatibility
     const textarea = document.createElement('textarea');
     textarea.value = wechatId;
+    textarea.readOnly = true;
     textarea.style.position = 'fixed';
-    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '2em';
+    textarea.style.height = '2em';
+    textarea.style.opacity = '0';
+    textarea.style.fontSize = '16px';
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
+    textarea.setSelectionRange(0, 99999);
     try {
       document.execCommand('copy');
       setCopied(true);

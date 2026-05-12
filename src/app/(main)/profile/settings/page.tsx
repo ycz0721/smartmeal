@@ -7,12 +7,6 @@ import { ArrowLeft, HelpCircle, ChevronRight } from 'lucide-react';
 
 const settingsGroups: { title: string; items: { label: string; href: string; value?: string }[] }[] = [
   {
-    title: '偏好设置',
-    items: [
-      { label: '不喜欢的食物', href: '/profile/settings/intolerances' },
-    ],
-  },
-  {
     title: '关于',
     items: [
       { label: '应用版本', href: '#', value: 'v0.6.8' },

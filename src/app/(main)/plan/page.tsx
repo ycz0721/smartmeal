@@ -10,6 +10,7 @@ import { Clock, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { GeneratePlanSheet } from '@/components/GeneratePlanSheet';
 import { ManagePlanSheet } from '@/components/ManagePlanSheet';
+import { GenerateProgressSheet } from '@/components/GenerateProgressSheet';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 
 interface DishItem {
@@ -52,6 +53,8 @@ export default function PlanPage() {
   const [generateSheetOpen, setGenerateSheetOpen] = useState(false);
   const [manageSheetOpen, setManageSheetOpen] = useState(false);
   const [selectedDish, setSelectedDish] = useState<DishItem | null>(null);
+  const [progressStatus, setProgressStatus] = useState<'generating' | 'success' | 'error'>('generating');
+  const [progressOpen, setProgressOpen] = useState(false);
   const { cuisines, intolerances, dietary, familySize, mealPeople } = useUserPrefs();
 
   useEffect(() => {
@@ -91,6 +94,8 @@ export default function PlanPage() {
   }) => {
     setLoading(true);
     setGenerateSheetOpen(false);
+    setProgressStatus('generating');
+    setProgressOpen(true);
     try {
       const res = await fetch('/api/plan/generate', {
         method: 'POST',
@@ -112,16 +117,28 @@ export default function PlanPage() {
         const data = await res.json();
         setPlan(data.plan);
         fetchHistory();
+        setProgressStatus('success');
         toast.success(`已生成计划并自动同步 ${data.shoppingCount} 种食材到购物清单`);
+        setTimeout(() => {
+          setProgressOpen(false);
+        }, 1500);
       } else {
         const err = await res.json().catch(() => ({ error: '请求失败' }));
         toast.error(err.error || '生成计划失败，请重试');
+        setProgressStatus('error');
       }
     } catch (error) {
       toast.error('网络错误，请检查连接后重试');
+      setProgressStatus('error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setProgressOpen(false);
+    setLoading(false);
+    setGenerateSheetOpen(true);
   };
 
   const [cooking, setCooking] = useState(false);
@@ -496,6 +513,11 @@ export default function PlanPage() {
         onOpenChange={setGenerateSheetOpen}
         onGenerate={handleGenerate}
         loading={loading}
+      />
+      <GenerateProgressSheet
+        open={progressOpen}
+        status={progressStatus}
+        onRetry={handleRetry}
       />
       <ManagePlanSheet
         open={manageSheetOpen}

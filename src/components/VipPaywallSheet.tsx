@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 
 interface VipPaywallSheetProps {
@@ -10,42 +10,25 @@ interface VipPaywallSheetProps {
 
 export function VipPaywallSheet({ open, onOpenChange }: VipPaywallSheetProps) {
   const [copied, setCopied] = useState(false);
+  const [showInput, setShowInput] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const wechatId = 'ycz0721k';
 
   const handleCopy = () => {
-    // Try modern clipboard API first
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(wechatId).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }).catch(() => legacyCopy());
-    } else {
-      legacyCopy();
-    }
+    // On mobile HTTP, programmatic copy is unreliable.
+    // Show an auto-selected input so the native "Copy" menu appears.
+    setShowInput(true);
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
+    }, 100);
   };
 
-  const legacyCopy = () => {
-    // Use visible but tiny textarea for mobile compatibility
-    const textarea = document.createElement('textarea');
-    textarea.value = wechatId;
-    textarea.readOnly = true;
-    textarea.style.position = 'fixed';
-    textarea.style.top = '0';
-    textarea.style.left = '0';
-    textarea.style.width = '2em';
-    textarea.style.height = '2em';
-    textarea.style.opacity = '0';
-    textarea.style.fontSize = '16px';
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    textarea.setSelectionRange(0, 99999);
-    try {
-      document.execCommand('copy');
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {}
-    document.body.removeChild(textarea);
+  const handleInputBlur = () => {
+    setShowInput(false);
+    setCopied(false);
   };
 
   return (
@@ -61,10 +44,20 @@ export function VipPaywallSheet({ open, onOpenChange }: VipPaywallSheetProps) {
 
         <div className="flex items-center gap-3 bg-[#2A2A2A] rounded-xl px-4 py-3">
           <span className="text-[#CCCCCC] text-sm flex-shrink-0">微信号：</span>
-          <span className="text-white text-sm font-mono flex-1">{wechatId}</span>
+          {showInput ? (
+            <input
+              ref={inputRef}
+              value={wechatId}
+              readOnly
+              onBlur={handleInputBlur}
+              className="flex-1 bg-transparent text-white text-sm font-mono focus:outline-none"
+            />
+          ) : (
+            <span className="text-white text-sm font-mono flex-1">{wechatId}</span>
+          )}
           <button
             onClick={handleCopy}
-            className="px-3 py-1 rounded-md border border-[#F97316] text-[#F97316] text-xs font-medium hover:bg-[#F97316]/10 transition-colors"
+            className="px-3 py-1 rounded-md border border-[#F97316] text-[#F97316] text-xs font-medium hover:bg-[#F97316]/10 transition-colors flex-shrink-0"
           >
             {copied ? '已复制 ✅' : '复制'}
           </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 
 interface FamilyCreateSheetProps {
@@ -16,6 +16,8 @@ export function FamilyCreateSheet({ open, onOpenChange }: FamilyCreateSheetProps
   const [data, setData] = useState<{ inviteCode: string; members: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showInput, setShowInput] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -31,41 +33,21 @@ export function FamilyCreateSheet({ open, onOpenChange }: FamilyCreateSheetProps
     if (open) fetchData();
   }, [open]);
 
-  const legacyCopy = (text: string) => {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.readOnly = true;
-    textarea.style.position = 'fixed';
-    textarea.style.top = '0';
-    textarea.style.left = '0';
-    textarea.style.width = '2em';
-    textarea.style.height = '2em';
-    textarea.style.opacity = '0';
-    textarea.style.fontSize = '16px';
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    textarea.setSelectionRange(0, 99999);
-    try { document.execCommand('copy'); } catch {}
-    document.body.removeChild(textarea);
-  };
-
   const handleCopy = () => {
     if (!data?.inviteCode) return;
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(data.inviteCode).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }).catch(() => {
-        legacyCopy(data.inviteCode);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      });
-    } else {
-      legacyCopy(data.inviteCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }
+    setShowInput(true);
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
+    }, 100);
+    setCopied(true);
+  };
+
+  const handleInputBlur = () => {
+    setShowInput(false);
+    setCopied(false);
   };
 
   return (
@@ -78,14 +60,24 @@ export function FamilyCreateSheet({ open, onOpenChange }: FamilyCreateSheetProps
         ) : data ? (
           <>
             {/* Invite code card */}
-            <div className="bg-[#2A2A2A] rounded-xl px-4 py-4 flex items-center justify-between">
-              <div>
+            <div className="bg-[#2A2A2A] rounded-xl px-4 py-4 flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-[#888888] mb-1">邀请码</p>
-                <p className="text-[32px] font-bold text-[#F97316] tracking-[4px]">{data.inviteCode}</p>
+                {showInput ? (
+                  <input
+                    ref={inputRef}
+                    value={data.inviteCode}
+                    readOnly
+                    onBlur={handleInputBlur}
+                    className="w-full bg-transparent text-[32px] font-bold text-[#F97316] tracking-[4px] focus:outline-none"
+                  />
+                ) : (
+                  <p className="text-[32px] font-bold text-[#F97316] tracking-[4px] truncate">{data.inviteCode}</p>
+                )}
               </div>
               <button
                 onClick={handleCopy}
-                className="px-3 py-1.5 rounded-md border border-[#F97316] text-[#F97316] text-xs font-medium hover:bg-[#F97316]/10 transition-colors"
+                className="px-3 py-1.5 rounded-md border border-[#F97316] text-[#F97316] text-xs font-medium hover:bg-[#F97316]/10 transition-colors flex-shrink-0"
               >
                 {copied ? '已复制 ✅' : '复制'}
               </button>

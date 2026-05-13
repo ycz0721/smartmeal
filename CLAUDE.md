@@ -193,6 +193,44 @@ ssh root@8.134.146.192 "cd /root/smartmeal && git pull && npm run build && npx p
 
 密钥位置：`C:\Users\郑永灿\.ssh\id_ed25519`（本机），对应公钥已写入服务器 `/root/.ssh/authorized_keys`。
 
+## 家庭空间数据共享设计原则
+
+**核心规则：读全空间，写当前用户。**
+
+工具函数 `getSpaceUserIds(userId)` 位于 `src/lib/family.ts`，查询 `FamilyMember` 表返回该用户所在空间的所有成员 ID 数组（不在空间则返回 `[userId]`）。
+
+### 读接口（使用 spaceUserIds）
+所有 GET 查询和"写前读"的校验查询，`userId` 条件必须改为 `userId: { in: spaceUserIds }`：
+
+| 接口 | 影响 |
+|------|------|
+| `GET /api/recipes` | 查看全家的食谱 |
+| `GET /api/recipes/tags` | 标签来自全家食谱 |
+| `GET /api/plan/current` | 查看全家的当前计划 |
+| `GET /api/plan/history` | 查看全家的历史计划 |
+| `GET /api/pantry` | 查看全家的冰箱 |
+| `GET /api/groceries/aggregate` | 购物清单基于全家计划+冰箱计算 |
+| `POST /api/plan/generate` | 生成时参考全家历史+冰箱去重 |
+| `POST /api/plan/replace-dish` | 替换时查找全家计划+食谱 |
+| `POST /api/plan/cook-deduct` | 扣减时查找全家冰箱 |
+| `POST /api/plan/sync-to-cart` | 同步时聚合全家计划+冰箱 |
+| `POST /api/groceries/[id]/toggle` | 勾选采购时合并到全家冰箱 |
+| `POST /api/groceries/clear-all` | 一键买完时合并到全家冰箱 |
+| `POST /api/recipes/from-pantry` | 冰箱联想基于全家冰箱 |
+| `PATCH /api/recipes/[id]/favorite` | 可收藏家人的食谱 |
+
+### 写接口（只用当前 userId）
+所有创建/更新/删除操作，`userId` 仍然是 `session.user.id`：
+- 创建计划、食谱、冰箱食材、购物项 → 记在当前用户名下
+- 编辑/删除自己的食谱、冰箱食材 → 校验 ownership
+- 家庭空间创建/加入/退出 → 操作当前用户
+
+### 新增接口时检查清单
+任何新接口或修改现有接口时，问自己：
+1. 这个查询是"读"吗？→ 用 `getSpaceUserIds` + `userId: { in: spaceUserIds }`
+2. 这个查询是"写前校验"吗（比如找到记录再修改）？→ 如果修改的是共享资源（计划/冰箱），用 spaceUserIds；如果修改的是自己私有的（购物清单），用当前 userId
+3. 这个操作是"写"吗？→ 用 `session.user.id`
+
 ## 踩过的坑
 
 1. **NextAuth v5 + IP 访问**：部署到阿里云用 IP 直连，必须加 `AUTH_TRUST_HOST=true`，否则 UntrustedHost 错误
@@ -209,6 +247,7 @@ ssh root@8.134.146.192 "cd /root/smartmeal && git pull && npm run build && npx p
 12. **GitHub 国内网络不稳定**：github.com TCP 443 偶尔不可达（超时/连接重置），反复重试通常能恢复。备用方案：服务器本身可能也能连 GitHub，可以先 push 再让服务器 pull。
 13. **Windows 终端引号转义**：PowerShell/CMD 对单引号、换行符、特殊字符的处理与 bash 不同，跨平台命令尽量用 Python 一行脚本或用 heredoc 避免转义问题。
 14. **移动端 HTTP 复制 API 不可用**：`navigator.clipboard` 在非 HTTPS 下不可用，`document.execCommand('copy')` 在移动端也不可靠。解决方案：显示一个可见的 `<input>`，自动 focus + select，触发系统原生复制菜单。
+15. **家庭空间"写"接口也需要改读权限**：最初只改了纯 GET 读接口，遗漏了"写前先读"的接口（replace-dish 查计划、cook-deduct 查冰箱、toggle 查 pantry 等）。这些接口的查询条件也必须用 `spaceUserIds`，否则家庭成员操作时会找不到空间主人的数据而报错。凡是接口里带 `findFirst`/`findUnique` 校验数据归属的地方，都要检查是否该用空间维度。
 
 ## 为什么老出错的根因 & 改进
 

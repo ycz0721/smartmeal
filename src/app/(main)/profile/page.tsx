@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { FamilyCreateSheet } from '@/components/FamilyCreateSheet';
 import { FamilyJoinSheet } from '@/components/FamilyJoinSheet';
+import { FamilySpaceSheet } from '@/components/FamilySpaceSheet';
 import { HelpCircle, Settings, AlertTriangle, Heart, Users } from 'lucide-react';
 import { useUserPrefs } from '@/stores/userPrefs';
 
@@ -33,11 +34,39 @@ export default function ProfilePage() {
   const [mealPeopleSheetOpen, setMealPeopleSheetOpen] = useState(false);
   const [familyCreateOpen, setFamilyCreateOpen] = useState(false);
   const [familyJoinOpen, setFamilyJoinOpen] = useState(false);
+  const [familySpace, setFamilySpace] = useState<{ memberCount: number } | null>(null);
+  const [familySpaceSheetOpen, setFamilySpaceSheetOpen] = useState(false);
+
+  const fetchFamilyInfo = async () => {
+    try {
+      const res = await fetch('/api/family/info');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.space) {
+          setFamilySpace({ memberCount: data.space.members.length });
+        } else {
+          setFamilySpace(null);
+        }
+      }
+    } catch {}
+  };
+
+  const prevCreateOpen = useRef(familyCreateOpen);
+  const prevJoinOpen = useRef(familyJoinOpen);
 
   useEffect(() => {
     fetchFavorites();
     fetchMealPeople();
+    fetchFamilyInfo();
   }, []);
+
+  // Re-fetch family info when create/join sheet closes
+  useEffect(() => {
+    if (prevCreateOpen.current && !familyCreateOpen) fetchFamilyInfo();
+    if (prevJoinOpen.current && !familyJoinOpen) fetchFamilyInfo();
+    prevCreateOpen.current = familyCreateOpen;
+    prevJoinOpen.current = familyJoinOpen;
+  }, [familyCreateOpen, familyJoinOpen]);
 
   useEffect(() => {
     setMealPeopleInput(mealPeople);
@@ -128,26 +157,38 @@ export default function ProfilePage() {
       </div>
 
       {/* Family Space Buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      {familySpace ? (
         <button
-          onClick={() => setFamilyCreateOpen(true)}
+          onClick={() => setFamilySpaceSheetOpen(true)}
           className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm text-brand-text hover:bg-gray-50 transition-colors"
         >
-          <span className="text-base flex-shrink-0">🏠</span>
-          <span className="truncate">创建家庭空间</span>
+          <span className="text-base flex-shrink-0">👨‍👩‍👧‍👦</span>
+          <span className="truncate">家庭空间</span>
+          <span className="text-xs text-[#F97316] ml-auto">{familySpace.memberCount}人</span>
         </button>
-        <button
-          onClick={() => setFamilyJoinOpen(true)}
-          className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm text-brand-text hover:bg-gray-50 transition-colors"
-        >
-          <span className="text-base flex-shrink-0">➕</span>
-          <span className="truncate">加入家庭空间</span>
-        </button>
-      </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setFamilyCreateOpen(true)}
+            className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm text-brand-text hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-base flex-shrink-0">🏠</span>
+            <span className="truncate">创建家庭空间</span>
+          </button>
+          <button
+            onClick={() => setFamilyJoinOpen(true)}
+            className="flex items-center gap-2 px-4 py-3 rounded-[20px] border border-[#EEEEEE] bg-white text-sm text-brand-text hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-base flex-shrink-0">➕</span>
+            <span className="truncate">加入家庭空间</span>
+          </button>
+        </div>
+      )}
 
       {/* Family Sheets */}
       <FamilyCreateSheet open={familyCreateOpen} onOpenChange={setFamilyCreateOpen} />
       <FamilyJoinSheet open={familyJoinOpen} onOpenChange={setFamilyJoinOpen} />
+      <FamilySpaceSheet open={familySpaceSheetOpen} onOpenChange={setFamilySpaceSheetOpen} onLeave={fetchFamilyInfo} />
 
       {/* Meal People BottomSheet */}
       <BottomSheet open={mealPeopleSheetOpen} onOpenChange={setMealPeopleSheetOpen} className="bg-[#1E1E1E]">

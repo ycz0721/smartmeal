@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { reconcileShoppingList } from '@/lib/shopping-calculator';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +12,9 @@ export async function POST() {
       return NextResponse.json({ error: '未授权' }, { status: 401 });
     }
 
-    const items = await reconcileShoppingList(session.user.id);
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
+
+    const items = await reconcileShoppingList(session.user.id, spaceUserIds);
     return NextResponse.json({ count: items.length });
   } catch (error) {
     console.error('同步购物清单失败:', error);

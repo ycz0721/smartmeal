@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -11,8 +12,10 @@ export async function GET() {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
+
     const plans = await prisma.mealPlan.findMany({
-      where: { userId: session.user.id },
+      where: { userId: { in: spaceUserIds } },
       orderBy: { createdAt: 'desc' },
     });
 

@@ -101,39 +101,53 @@ function subtractPantry(
 /**
  * Rebuild the shopping list from scratch:
  * 1. Delete all existing ShoppingItems for the user
- * 2. Calculate needed ingredients from current plan
- * 3. Subtract pantry stock
- * 4. Insert shortfall items
+ * 2. Calculate needed ingredients from current plans (all space members)
+ * 3. Subtract pantry stock (all space members)
+ * 4. Insert shortfall items for the user
  */
-export async function reconcileShoppingList(userId: string): Promise<
+export async function reconcileShoppingList(
+  userId: string,
+  spaceUserIds?: string[],
+): Promise<
   { id: string; name: string; amount: number; unit: string; checked: boolean }[]
 > {
-  // Delete all existing shopping items
+  // Delete all existing shopping items for the current user
   await prisma.shoppingItem.deleteMany({ where: { userId } });
 
-  // Get current plan
-  const plan = await prisma.mealPlan.findFirst({
-    where: { userId, isCurrent: true },
+  const planUserIds = spaceUserIds || [userId];
+
+  // Get current plans from all space users
+  const plans = await prisma.mealPlan.findMany({
+    where: { userId: { in: planUserIds }, isCurrent: true },
   });
 
-  if (!plan) return [];
+  if (!plans.length) return [];
 
-  // Parse cooked recipes and exclude them from ingredient calculation
-  const cookedRecipeIds = parseCookedRecipes(plan.cookedRecipes);
+  // Aggregate needed ingredients across all plans
+  const allNeeded: AggregatedIngredient[] = [];
+  for (const plan of plans) {
+    const cookedRecipeIds = parseCookedRecipes(plan.cookedRecipes);
+    const needed = extractPlanIngredients(plan.meals, cookedRecipeIds);
+    for (const ing of needed) {
+      const existing = allNeeded.find((x) => x._key === ing._key);
+      if (existing) {
+        existing.amount += ing.amount;
+      } else {
+        allNeeded.push(ing);
+      }
+    }
+  }
 
-  // Extract needed ingredients (only from uncooked dishes)
-  const needed = extractPlanIngredients(plan.meals, cookedRecipeIds);
-
-  // Get pantry stock
+  // Get pantry stock from all space users
   const pantryItems = await prisma.pantryItem.findMany({
-    where: { userId },
+    where: { userId: { in: planUserIds } },
     select: { name: true, amount: true, unit: true },
   });
 
   // Calculate shortfall
-  const shortfall = subtractPantry(needed, pantryItems);
+  const shortfall = subtractPantry(allNeeded, pantryItems);
 
-  // Insert shortfall as new shopping items
+  // Insert shortfall as new shopping items for the current user
   const created: { id: string; name: string; amount: number; unit: string; checked: boolean }[] = [];
   for (const ing of shortfall) {
     const item = await prisma.shoppingItem.create({

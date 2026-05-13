@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { reconcileShoppingList } from '@/lib/shopping-calculator';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -11,8 +12,10 @@ export async function GET() {
       return NextResponse.json({ error: '未授权' }, { status: 401 });
     }
 
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
+
     // Always recalculate from scratch so the list reflects current plan and pantry
-    const items = await reconcileShoppingList(session.user.id);
+    const items = await reconcileShoppingList(session.user.id, spaceUserIds);
     return NextResponse.json(items);
   } catch (error) {
     console.error('获取购物清单失败:', error);

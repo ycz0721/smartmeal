@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -14,8 +15,9 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const tag = searchParams.get('tag');
     const favorite = searchParams.get('favorite');
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
 
-    const where: any = { userId: session.user.id };
+    const where: any = { userId: { in: spaceUserIds } };
 
     if (tag) {
       where.tags = { contains: tag };

@@ -183,6 +183,16 @@ src/
 
 注意：服务器 `/root/smartmeal` 本身就是 git 仓库，直连 GitHub，不再通过 `/tmp` 中转复制文件。
 
+### SSH 自动部署
+
+本机已配置 SSH 密钥直连服务器，部署命令（在本机执行）：
+
+```
+ssh root@8.134.146.192 "cd /root/smartmeal && git pull && npm run build && npx pm2 restart all"
+```
+
+密钥位置：`C:\Users\郑永灿\.ssh\id_ed25519`（本机），对应公钥已写入服务器 `/root/.ssh/authorized_keys`。
+
 ## 踩过的坑
 
 1. **NextAuth v5 + IP 访问**：部署到阿里云用 IP 直连，必须加 `AUTH_TRUST_HOST=true`，否则 UntrustedHost 错误
@@ -195,6 +205,10 @@ src/
 8. **Next.js 15 路由参数是异步的**：`params` 是 `Promise<{ filename: string }>`，必须 `await` 解包
 9. **pm2 命令不在全局 PATH**：服务器上必须用 `npx pm2 restart all`，不能用 `pm2 restart all`（会报 Command not found）
 10. **服务器 git pull 可能分叉**：如果服务器直接 commit 过，用 `git fetch origin && git reset --hard origin/master` 强制同步
+11. **SSH 公钥换行截断**：终端粘贴长文本（如 SSH 公钥）容易被自动换行拆成多行，导致认证失败。解决方案：用 Python 写入，或 `printf` + 单行无空格。**不要直接在终端 echo/粘贴长密钥。**
+12. **GitHub 国内网络不稳定**：github.com TCP 443 偶尔不可达（超时/连接重置），反复重试通常能恢复。备用方案：服务器本身可能也能连 GitHub，可以先 push 再让服务器 pull。
+13. **Windows 终端引号转义**：PowerShell/CMD 对单引号、换行符、特殊字符的处理与 bash 不同，跨平台命令尽量用 Python 一行脚本或用 heredoc 避免转义问题。
+14. **移动端 HTTP 复制 API 不可用**：`navigator.clipboard` 在非 HTTPS 下不可用，`document.execCommand('copy')` 在移动端也不可靠。解决方案：显示一个可见的 `<input>`，自动 focus + select，触发系统原生复制菜单。
 
 ## 为什么老出错的根因 & 改进
 

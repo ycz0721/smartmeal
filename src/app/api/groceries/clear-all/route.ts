@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { reconcileShoppingList } from '@/lib/shopping-calculator';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -13,14 +14,15 @@ export async function POST() {
     }
 
     const userId = session.user.id;
+    const spaceUserIds = await getSpaceUserIds(userId);
 
     // Get all shopping items
     const items = await prisma.shoppingItem.findMany({ where: { userId } });
 
-    // Batch upsert into pantry
+    // Batch upsert into pantry (merge with existing items across space)
     for (const item of items) {
       const existing = await prisma.pantryItem.findFirst({
-        where: { userId, name: item.name, unit: item.unit },
+        where: { userId: { in: spaceUserIds }, name: item.name, unit: item.unit },
       });
       if (existing) {
         await prisma.pantryItem.update({
@@ -38,7 +40,7 @@ export async function POST() {
     await prisma.shoppingItem.deleteMany({ where: { userId } });
 
     // Recalculate to get any remaining shortfall
-    const remaining = await reconcileShoppingList(userId);
+    const remaining = await reconcileShoppingList(userId, spaceUserIds);
 
     return NextResponse.json({ cleared: items.length, remaining: remaining.length });
   } catch (error) {

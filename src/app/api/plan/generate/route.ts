@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateMealPlan } from '@/lib/ai';
 import { reconcileShoppingList } from '@/lib/shopping-calculator';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -103,9 +104,11 @@ export async function POST(req: Request) {
     const selectedMealTypes: string[] = mealTypes || ['dinner'];
     const selectedCombo: string = dishCombo || '一荤一素一汤';
 
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
+
     // Fetch recently generated dishes from plan history to avoid repeats
     const recentPlans = await prisma.mealPlan.findMany({
-      where: { userId: session.user.id },
+      where: { userId: { in: spaceUserIds } },
       select: { meals: true },
       orderBy: { createdAt: 'desc' },
       take: 3,
@@ -125,9 +128,9 @@ export async function POST(req: Request) {
       } catch {}
     }
 
-    // Fetch pantry items to pass to AI
+    // Fetch pantry items from all space members to pass to AI
     const pantryItems = await prisma.pantryItem.findMany({
-      where: { userId: session.user.id },
+      where: { userId: { in: spaceUserIds } },
       select: { name: true, amount: true, unit: true },
     });
 
@@ -207,7 +210,7 @@ export async function POST(req: Request) {
     // Auto-reconcile shopping list after generating new plan
     let shoppingCount = 0;
     try {
-      const shoppingItems = await reconcileShoppingList(session.user.id);
+      const shoppingItems = await reconcileShoppingList(session.user.id, spaceUserIds);
       shoppingCount = shoppingItems.length;
     } catch (e) {
       console.error('同步购物清单失败:', e);

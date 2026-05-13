@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { callAI } from '@/lib/ai';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -12,8 +13,10 @@ export async function POST(_req: NextRequest) {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
+
     const pantryItems = await prisma.pantryItem.findMany({
-      where: { userId: session.user.id },
+      where: { userId: { in: spaceUserIds } },
     });
 
     if (pantryItems.length === 0) {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { reconcileShoppingList } from '@/lib/shopping-calculator';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -17,9 +18,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '缺少食谱ID' }, { status: 400 });
     }
 
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
+
     let ingredients: any[];
     const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
-    if (recipe && recipe.userId === session.user.id) {
+    if (recipe && spaceUserIds.includes(recipe.userId)) {
       ingredients = JSON.parse(recipe.ingredients);
     } else if (fallbackIngredients && Array.isArray(fallbackIngredients)) {
       ingredients = fallbackIngredients;
@@ -31,7 +34,7 @@ export async function POST(req: Request) {
 
     for (const ing of ingredients) {
       const pantryItem = await prisma.pantryItem.findFirst({
-        where: { userId: session.user.id, name: ing.name, unit: ing.unit },
+        where: { userId: { in: spaceUserIds }, name: ing.name, unit: ing.unit },
       });
       if (!pantryItem) continue;
 
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
 
     // Mark this recipe as cooked in the current plan, so it won't be counted again
     const plan = await prisma.mealPlan.findFirst({
-      where: { userId: session.user.id, isCurrent: true },
+      where: { userId: { in: spaceUserIds }, isCurrent: true },
     });
     if (plan) {
       let cooked: string[] = [];
@@ -64,7 +67,7 @@ export async function POST(req: Request) {
     }
 
     // Refresh shopping list (now excluding cooked dishes from calculation)
-    const shoppingItems = await reconcileShoppingList(session.user.id);
+    const shoppingItems = await reconcileShoppingList(session.user.id, spaceUserIds);
 
     return NextResponse.json({
       deducted,

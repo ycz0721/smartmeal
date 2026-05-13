@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -15,11 +16,12 @@ export async function PATCH(
     }
 
     const { id } = await params;
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
 
     const recipe = await prisma.recipe.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: { in: spaceUserIds },
       },
     });
 

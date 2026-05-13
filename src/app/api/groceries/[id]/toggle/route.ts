@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -24,12 +25,13 @@ export async function POST(
       return NextResponse.json({ error: '未找到' }, { status: 404 });
     }
 
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
     const newChecked = !item.checked;
 
     if (newChecked) {
-      // CHECK: "已购买" → add to pantry
+      // CHECK: "已购买" → add to pantry (find existing across space to merge)
       const existing = await prisma.pantryItem.findFirst({
-        where: { userId: session.user.id, name: item.name, unit: item.unit },
+        where: { userId: { in: spaceUserIds }, name: item.name, unit: item.unit },
       });
       if (existing) {
         await prisma.pantryItem.update({
@@ -47,9 +49,9 @@ export async function POST(
         });
       }
     } else {
-      // UNCHECK: "取消购买" → deduct from pantry
+      // UNCHECK: "取消购买" → deduct from pantry (search across space)
       const pantryItem = await prisma.pantryItem.findFirst({
-        where: { userId: session.user.id, name: item.name, unit: item.unit },
+        where: { userId: { in: spaceUserIds }, name: item.name, unit: item.unit },
       });
       if (pantryItem) {
         const newAmount = Math.round((pantryItem.amount - item.amount) * 10) / 10;

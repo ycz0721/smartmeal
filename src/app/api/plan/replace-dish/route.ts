@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { reconcileShoppingList } from '@/lib/shopping-calculator';
+import { getSpaceUserIds } from '@/lib/family';
 
 export const runtime = 'nodejs';
 
@@ -19,17 +20,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '参数不完整' }, { status: 400 });
     }
 
-    // Find the plan
+    const spaceUserIds = await getSpaceUserIds(session.user.id);
+
+    // Find the plan (may belong to another space member)
     const plan = await prisma.mealPlan.findFirst({
-      where: { id: planId || '', userId: session.user.id },
+      where: { id: planId || '', userId: { in: spaceUserIds } },
     });
     if (!plan) {
       return NextResponse.json({ error: '计划不存在' }, { status: 404 });
     }
 
-    // Find the new recipe
+    // Find the new recipe (may belong to another space member)
     const newRecipe = await prisma.recipe.findFirst({
-      where: { id: newRecipeId, userId: session.user.id },
+      where: { id: newRecipeId, userId: { in: spaceUserIds } },
     });
     if (!newRecipe) {
       return NextResponse.json({ error: '食谱不存在' }, { status: 404 });
@@ -89,7 +92,7 @@ export async function POST(req: Request) {
     });
 
     // Reconcile shopping list
-    const shoppingItems = await reconcileShoppingList(session.user.id);
+    const shoppingItems = await reconcileShoppingList(session.user.id, spaceUserIds);
 
     return NextResponse.json({
       success: true,
